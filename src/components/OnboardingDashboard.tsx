@@ -26,9 +26,7 @@ import {
 import { ApplicationForm } from './ApplicationForm';
 import { ApplicationTable } from './ApplicationTable';
 import { DetailView } from './DetailView';
-import { NotificationCenter } from './NotificationCenter';
 import { DashboardStats } from './DashboardStats';
-import { AIInsights } from './AIInsights';
 import { useToast } from '@/hooks/use-toast';
 
 interface Application {
@@ -49,80 +47,23 @@ interface Application {
   priority: 'high' | 'medium' | 'low';
   aiScore?: number;
   riskLevel?: 'low' | 'medium' | 'high';
+  verificationStatus?: 'pending' | 'completed' | 'failed';
 }
 
 export const OnboardingDashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [applications, setApplications] = useState<Application[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDetailViewOpen, setIsDetailViewOpen] = useState(false);
   const [notifications, setNotifications] = useState(0);
+  const [isVerifying, setIsVerifying] = useState(false);
   const { toast } = useToast();
 
-  // Mock data generation
+  // Initialize with empty data
   useEffect(() => {
-    const mockApplications: Application[] = [
-      {
-        id: '1',
-        entityName: 'TechCorp Solutions Ltd',
-        mid: 'MID001234',
-        rzpRmName: 'Rajesh Kumar',
-        pocName: 'Amit Sharma',
-        pocEmail: 'amit@techcorp.com',
-        pocPhone: '+91-9876543210',
-        status: 'pending',
-        submissionDate: new Date('2024-01-15'),
-        expectedCreditLimit: 5000000,
-        monthlySpends: 2500000,
-        businessWebsite: 'https://techcorp.com',
-        city: 'Mumbai',
-        priority: 'high',
-        aiScore: 85,
-        riskLevel: 'low'
-      },
-      {
-        id: '2',
-        entityName: 'Digital Marketing Pro',
-        mid: 'MID005678',
-        rzpRmName: 'Priya Singh',
-        pocName: 'Rohit Verma',
-        pocEmail: 'rohit@digitalmp.com',
-        pocPhone: '+91-9123456789',
-        status: 'approved',
-        submissionDate: new Date('2024-01-10'),
-        approvalDate: new Date('2024-01-12'),
-        expectedCreditLimit: 2000000,
-        monthlySpends: 1200000,
-        businessWebsite: 'https://digitalmp.com',
-        city: 'Bangalore',
-        priority: 'medium',
-        aiScore: 78,
-        riskLevel: 'low'
-      },
-      {
-        id: '3',
-        entityName: 'E-commerce Ventures',
-        mid: 'MID009012',
-        rzpRmName: 'Suresh Patel',
-        pocName: 'Neha Gupta',
-        pocEmail: 'neha@ecomventures.com',
-        pocPhone: '+91-9988776655',
-        status: 'active',
-        submissionDate: new Date('2024-01-05'),
-        approvalDate: new Date('2024-01-08'),
-        expectedCreditLimit: 8000000,
-        monthlySpends: 4500000,
-        businessWebsite: 'https://ecomventures.com',
-        city: 'Delhi',
-        priority: 'high',
-        aiScore: 92,
-        riskLevel: 'low'
-      }
-    ];
-    setApplications(mockApplications);
-    setNotifications(3);
+    setNotifications(0);
   }, []);
 
   const filteredApplications = applications.filter(app =>
@@ -131,59 +72,129 @@ export const OnboardingDashboard: React.FC = () => {
     app.rzpRmName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleApplicationSubmit = (newApplication: Partial<Application>) => {
+  // Simulate automated data verification
+  const performAutomatedVerification = async (application: Application) => {
+    setIsVerifying(true);
+    toast({
+      title: 'Automated Verification Started',
+      description: `Starting verification for ${application.entityName}...`,
+    });
+
+    // Simulate API calls for verification
+    await new Promise(resolve => setTimeout(resolve, 3000));
+
+    const updatedApp = {
+      ...application,
+      verificationStatus: 'completed' as const,
+      aiScore: Math.floor(Math.random() * 30) + 70,
+      riskLevel: (['low', 'medium', 'high'] as const)[Math.floor(Math.random() * 3)]
+    };
+
+    setApplications(prev => 
+      prev.map(app => app.id === application.id ? updatedApp : app)
+    );
+
+    setIsVerifying(false);
+    toast({
+      title: 'Verification Complete',
+      description: `${application.entityName} has been verified and moved to Internal Review.`,
+    });
+
+    return updatedApp;
+  };
+
+  const handleApplicationSubmit = async (newApplicationData: Partial<Application>) => {
     const application: Application = {
       id: Date.now().toString(),
       status: 'pending',
       submissionDate: new Date(),
       priority: 'medium',
-      aiScore: Math.floor(Math.random() * 30) + 70,
-      riskLevel: 'low',
-      ...newApplication as Application
+      verificationStatus: 'pending',
+      ...newApplicationData as Application
     };
     
     setApplications(prev => [...prev, application]);
     setIsFormOpen(false);
+    
     toast({
-      title: 'Application Submitted',
-      description: `Application for ${application.entityName} has been submitted successfully.`,
+      title: 'Application Submitted Successfully',
+      description: `Application for ${application.entityName} has been submitted and will undergo automated verification.`,
     });
+
+    // Start automated verification
+    await performAutomatedVerification(application);
   };
 
   const handleApproval = (id: string) => {
+    const application = applications.find(app => app.id === id);
+    if (!application) return;
+
+    const approvedApp = { 
+      ...application, 
+      status: 'approved' as const, 
+      approvalDate: new Date() 
+    };
+
+    // Update applications state
     setApplications(prev => 
       prev.map(app => 
-        app.id === id 
-          ? { ...app, status: 'approved', approvalDate: new Date() }
-          : app
+        app.id === id ? approvedApp : app
       )
     );
+
+    // Add to active applications (will be filtered by date)
     toast({
       title: 'Application Approved',
-      description: 'The application has been approved successfully.',
+      description: `${application.entityName} has been approved and added to Active Applications and Onboarding Tracker.`,
     });
   };
 
   const handleRejection = (id: string) => {
+    const application = applications.find(app => app.id === id);
+    if (!application) return;
+
     setApplications(prev => 
       prev.map(app => 
         app.id === id 
-          ? { ...app, status: 'rejected' }
+          ? { ...app, status: 'rejected' as const }
           : app
       )
     );
+
     toast({
       title: 'Application Rejected',
-      description: 'The application has been rejected.',
+      description: `${application?.entityName} application has been rejected.`,
       variant: 'destructive',
     });
   };
 
+  const getPendingReviewApplications = () => {
+    return applications.filter(app => 
+      app.status === 'pending' && 
+      app.verificationStatus === 'completed'
+    );
+  };
+
+  const getActiveApplications = () => {
+    const oneDayAgo = new Date();
+    oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+    
+    return applications.filter(app => 
+      app.status === 'approved' && 
+      app.approvalDate && 
+      app.approvalDate.getTime() > oneDayAgo.getTime()
+    );
+  };
+
+  const getOnboardingTrackerApplications = () => {
+    return applications.filter(app => app.status === 'approved');
+  };
+
   const dashboardStats = {
     totalApplications: applications.length,
-    pendingReview: applications.filter(app => app.status === 'pending').length,
+    pendingReview: getPendingReviewApplications().length,
     approved: applications.filter(app => app.status === 'approved').length,
-    active: applications.filter(app => app.status === 'active').length,
+    active: getActiveApplications().length,
     avgProcessingTime: '2.5 days',
     totalCreditLimit: applications.reduce((sum, app) => sum + (app.expectedCreditLimit || 0), 0),
     monthlyGMV: applications.reduce((sum, app) => sum + (app.monthlySpends || 0), 0)
@@ -201,8 +212,8 @@ export const OnboardingDashboard: React.FC = () => {
                   <BarChart3 className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-gray-900">Corporate Onboarding</h1>
-                  <p className="text-xs text-gray-500">Advanced Dashboard</p>
+                  <h1 className="text-xl font-bold text-gray-900">Corporate Onboarding Dashboard</h1>
+                  <p className="text-xs text-gray-500">Advanced Workflow Management</p>
                 </div>
               </div>
             </div>
@@ -259,33 +270,112 @@ export const OnboardingDashboard: React.FC = () => {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 lg:w-fit">
-            <TabsTrigger value="overview" className="flex items-center space-x-2">
+          <TabsList className="grid w-full grid-cols-4 lg:w-fit">
+            <TabsTrigger value="dashboard" className="flex items-center space-x-2">
               <BarChart3 className="w-4 h-4" />
-              <span>Overview</span>
+              <span>Dashboard</span>
             </TabsTrigger>
-            <TabsTrigger value="pending" className="flex items-center space-x-2">
+            <TabsTrigger value="internal-review" className="flex items-center space-x-2">
               <Clock className="w-4 h-4" />
-              <span>Pending ({dashboardStats.pendingReview})</span>
+              <span>Internal Review ({getPendingReviewApplications().length})</span>
             </TabsTrigger>
-            <TabsTrigger value="active" className="flex items-center space-x-2">
+            <TabsTrigger value="active-applications" className="flex items-center space-x-2">
               <CheckCircle className="w-4 h-4" />
-              <span>Active ({dashboardStats.active})</span>
+              <span>Active Applications ({getActiveApplications().length})</span>
             </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex items-center space-x-2">
+            <TabsTrigger value="onboarding-tracker" className="flex items-center space-x-2">
               <TrendingUp className="w-4 h-4" />
-              <span>Analytics</span>
-            </TabsTrigger>
-            <TabsTrigger value="insights" className="flex items-center space-x-2">
-              <AlertTriangle className="w-4 h-4" />
-              <span>AI Insights</span>
+              <span>Onboarding Tracker ({getOnboardingTrackerApplications().length})</span>
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview" className="space-y-6">
+          <TabsContent value="dashboard" className="space-y-6">
             <DashboardStats stats={dashboardStats} />
+            
+            {/* Quick Actions */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Quick Actions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Button 
+                    onClick={() => setIsFormOpen(true)}
+                    className="h-20 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
+                  >
+                    <div className="text-center">
+                      <Plus className="w-6 h-6 mx-auto mb-1" />
+                      <div className="text-sm">Submit New Application</div>
+                    </div>
+                  </Button>
+                  
+                  <Button 
+                    variant="outline"
+                    onClick={() => setActiveTab('internal-review')}
+                    className="h-20"
+                  >
+                    <div className="text-center">
+                      <Clock className="w-6 h-6 mx-auto mb-1" />
+                      <div className="text-sm">Review Pending ({getPendingReviewApplications().length})</div>
+                    </div>
+                  </Button>
+                  
+                  <Button 
+                    variant="outline"
+                    onClick={() => setActiveTab('onboarding-tracker')}
+                    className="h-20"
+                  >
+                    <div className="text-center">
+                      <TrendingUp className="w-6 h-6 mx-auto mb-1" />
+                      <div className="text-sm">Track Progress</div>
+                    </div>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Recent Applications */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Applications</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ApplicationTable 
+                  applications={applications.slice(0, 5)}
+                  onView={(app) => {
+                    setSelectedApplication(app);
+                    setIsDetailViewOpen(true);
+                  }}
+                  showActions={false}
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="internal-review" className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Internal Review & Decisioning</h2>
+                <p className="text-gray-600">Applications that have completed automated verification</p>
+              </div>
+              <Badge variant="secondary" className="text-sm">
+                {getPendingReviewApplications().length} Pending Review
+              </Badge>
+            </div>
+            
+            {isVerifying && (
+              <Card className="border-blue-200 bg-blue-50">
+                <CardContent className="p-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                    <span className="text-blue-800">Automated verification in progress...</span>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            
             <ApplicationTable 
-              applications={filteredApplications}
+              applications={getPendingReviewApplications()}
               onView={(app) => {
                 setSelectedApplication(app);
                 setIsDetailViewOpen(true);
@@ -296,34 +386,18 @@ export const OnboardingDashboard: React.FC = () => {
             />
           </TabsContent>
 
-          <TabsContent value="pending" className="space-y-6">
+          <TabsContent value="active-applications" className="space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-900">Pending Review</h2>
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Active Applications</h2>
+                <p className="text-gray-600">Recently approved applications (shown for 24 hours)</p>
+              </div>
               <Badge variant="secondary" className="text-sm">
-                {applications.filter(app => app.status === 'pending').length} Applications
+                {getActiveApplications().length} Active
               </Badge>
             </div>
             <ApplicationTable 
-              applications={applications.filter(app => app.status === 'pending')}
-              onView={(app) => {
-                setSelectedApplication(app);
-                setIsDetailViewOpen(true);
-              }}
-              onApprove={handleApproval}
-              onReject={handleRejection}
-              showActions={true}
-            />
-          </TabsContent>
-
-          <TabsContent value="active" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-900">Active Applications</h2>
-              <Badge variant="secondary" className="text-sm">
-                {applications.filter(app => app.status === 'active' || app.status === 'approved').length} Applications
-              </Badge>
-            </div>
-            <ApplicationTable 
-              applications={applications.filter(app => app.status === 'active' || app.status === 'approved')}
+              applications={getActiveApplications()}
               onView={(app) => {
                 setSelectedApplication(app);
                 setIsDetailViewOpen(true);
@@ -332,50 +406,24 @@ export const OnboardingDashboard: React.FC = () => {
             />
           </TabsContent>
 
-          <TabsContent value="analytics" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <TrendingUp className="w-5 h-5" />
-                    <span>Application Trends</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">This Month</span>
-                      <span className="font-semibold">15 Applications</span>
-                    </div>
-                    <Progress value={75} className="h-2" />
-                    <div className="text-xs text-gray-500">25% increase from last month</div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Clock className="w-5 h-5" />
-                    <span>Processing Time</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Average Time</span>
-                      <span className="font-semibold">2.5 Days</span>
-                    </div>
-                    <Progress value={60} className="h-2" />
-                    <div className="text-xs text-gray-500">15% faster than target</div>
-                  </div>
-                </CardContent>
-              </Card>
+          <TabsContent value="onboarding-tracker" className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Onboarding Tracker</h2>
+                <p className="text-gray-600">All approved applications - permanent record</p>
+              </div>
+              <Badge variant="secondary" className="text-sm">
+                {getOnboardingTrackerApplications().length} Total Onboarded
+              </Badge>
             </div>
-          </TabsContent>
-
-          <TabsContent value="insights" className="space-y-6">
-            <AIInsights applications={applications} />
+            <ApplicationTable 
+              applications={getOnboardingTrackerApplications()}
+              onView={(app) => {
+                setSelectedApplication(app);
+                setIsDetailViewOpen(true);
+              }}
+              showActions={false}
+            />
           </TabsContent>
         </Tabs>
       </div>

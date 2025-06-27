@@ -1,27 +1,23 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { 
   Brain, 
   TrendingUp, 
   AlertTriangle, 
-  CheckCircle, 
-  Target,
-  BarChart3,
-  Users,
-  DollarSign
+  CheckCircle,
+  XCircle,
+  BarChart3
 } from 'lucide-react';
 
 interface Application {
   id: string;
   entityName: string;
-  status: 'pending' | 'approved' | 'rejected' | 'active';
   aiScore?: number;
   riskLevel?: 'low' | 'medium' | 'high';
-  expectedCreditLimit: number;
-  monthlySpends: number;
+  status: string;
 }
 
 interface AIInsightsProps {
@@ -29,261 +25,150 @@ interface AIInsightsProps {
 }
 
 export const AIInsights: React.FC<AIInsightsProps> = ({ applications }) => {
-  const totalApplications = applications.length;
-  const avgAiScore = applications.reduce((sum, app) => sum + (app.aiScore || 0), 0) / totalApplications;
-  const highRiskApps = applications.filter(app => app.riskLevel === 'high').length;
-  const approvalRate = ((applications.filter(app => app.status === 'approved' || app.status === 'active').length) / totalApplications) * 100;
-
-  const insights = [
-    {
-      title: "High-Quality Applications",
-      description: "87% of applications this month have an AI score above 75, indicating strong creditworthiness.",
-      icon: <CheckCircle className="h-5 w-5 text-green-500" />,
-      trend: "up",
-      value: "87%"
-    },
-    {
-      title: "Risk Distribution Optimization",
-      description: "Risk assessment shows 78% low-risk applications, enabling faster processing.",
-      icon: <Target className="h-5 w-5 text-blue-500" />,
-      trend: "stable",
-      value: "78%"
-    },
-    {
-      title: "Processing Efficiency",
-      description: "AI-assisted verification reduced average processing time by 35%.",
-      icon: <TrendingUp className="h-5 w-5 text-purple-500" />,
-      trend: "up",
-      value: "35%"
-    },
-    {
-      title: "Credit Utilization Patterns",
-      description: "Average credit utilization ratio is 45%, indicating healthy spending patterns.",
-      icon: <BarChart3 className="h-5 w-5 text-orange-500" />,
-      trend: "stable",
-      value: "45%"
-    }
-  ];
-
-  const riskDistribution = {
-    low: applications.filter(app => app.riskLevel === 'low').length,
-    medium: applications.filter(app => app.riskLevel === 'medium').length,
-    high: applications.filter(app => app.riskLevel === 'high').length
+  const getAverageAIScore = () => {
+    const appsWithScores = applications.filter(app => app.aiScore);
+    if (appsWithScores.length === 0) return 0;
+    const total = appsWithScores.reduce((sum, app) => sum + (app.aiScore || 0), 0);
+    return Math.round(total / appsWithScores.length);
   };
 
-  const scoreDistribution = {
-    excellent: applications.filter(app => (app.aiScore || 0) >= 90).length,
-    good: applications.filter(app => (app.aiScore || 0) >= 75 && (app.aiScore || 0) < 90).length,
-    average: applications.filter(app => (app.aiScore || 0) >= 60 && (app.aiScore || 0) < 75).length,
-    below: applications.filter(app => (app.aiScore || 0) < 60).length
+  const getRiskDistribution = () => {
+    const distribution = { low: 0, medium: 0, high: 0 };
+    applications.forEach(app => {
+      if (app.riskLevel) {
+        distribution[app.riskLevel]++;
+      }
+    });
+    return distribution;
   };
+
+  const getHighRiskApplications = () => {
+    return applications.filter(app => app.riskLevel === 'high');
+  };
+
+  const avgScore = getAverageAIScore();
+  const riskDist = getRiskDistribution();
+  const highRiskApps = getHighRiskApplications();
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center space-x-3">
-        <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg flex items-center justify-center">
-          <Brain className="w-6 h-6 text-white" />
-        </div>
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">AI-Powered Insights</h2>
-          <p className="text-gray-600">Advanced analytics and recommendations for your onboarding process</p>
-        </div>
-      </div>
-
-      {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-blue-700">Avg AI Score</p>
-                <p className="text-2xl font-bold text-blue-900">{avgAiScore.toFixed(1)}</p>
-              </div>
-              <Brain className="h-8 w-8 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-green-700">Approval Rate</p>
-                <p className="text-2xl font-bold text-green-900">{approvalRate.toFixed(1)}%</p>
-              </div>
-              <CheckCircle className="h-8 w-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-amber-700">High Risk Apps</p>
-                <p className="text-2xl font-bold text-amber-900">{highRiskApps}</p>
-              </div>
-              <AlertTriangle className="h-8 w-8 text-amber-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-purple-50 to-violet-50 border-purple-200">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-purple-700">Total Volume</p>
-                <p className="text-2xl font-bold text-purple-900">{totalApplications}</p>
-              </div>
-              <Users className="h-8 w-8 text-purple-600" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Insights Grid */}
+      {/* AI Score Overview */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* AI Insights */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
-              <Brain className="h-5 w-5 text-purple-600" />
-              <span>AI-Generated Insights</span>
+              <Brain className="w-5 h-5 text-purple-600" />
+              <span>AI Scoring Overview</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {insights.map((insight, index) => (
-              <div key={index} className="p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-start space-x-3">
-                  <div className="flex-shrink-0">
-                    {insight.icon}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-1">
-                      <h4 className="text-sm font-medium text-gray-900">{insight.title}</h4>
-                      <Badge variant="outline" className="text-xs">
-                        {insight.value}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-gray-600">{insight.description}</p>
-                  </div>
-                </div>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-purple-600">{avgScore}/100</div>
+                <p className="text-sm text-gray-600">Average AI Score</p>
               </div>
-            ))}
+              <Progress value={avgScore} className="h-3" />
+              <div className="text-xs text-gray-500 text-center">
+                Based on {applications.length} applications
+              </div>
+            </div>
           </CardContent>
         </Card>
 
-        {/* Risk Distribution */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
-              <AlertTriangle className="h-5 w-5 text-amber-600" />
+              <BarChart3 className="w-5 h-5 text-blue-600" />
               <span>Risk Distribution</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <span className="text-sm font-medium">Low Risk</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-gray-600">{riskDistribution.low}</span>
-                  <div className="w-24">
-                    <Progress value={(riskDistribution.low / totalApplications) * 100} className="h-2" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                  <span className="text-sm font-medium">Medium Risk</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-gray-600">{riskDistribution.medium}</span>
-                  <div className="w-24">
-                    <Progress value={(riskDistribution.medium / totalApplications) * 100} className="h-2" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                  <span className="text-sm font-medium">High Risk</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-gray-600">{riskDistribution.high}</span>
-                  <div className="w-24">
-                    <Progress value={(riskDistribution.high / totalApplications) * 100} className="h-2" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Score Distribution */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Target className="h-5 w-5 text-blue-600" />
-              <span>AI Score Distribution</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center p-4 bg-green-50 rounded-lg">
-                <p className="text-2xl font-bold text-green-600">{scoreDistribution.excellent}</p>
-                <p className="text-sm text-green-700">Excellent (90+)</p>
-              </div>
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <p className="text-2xl font-bold text-blue-600">{scoreDistribution.good}</p>
-                <p className="text-sm text-blue-700">Good (75-89)</p>
-              </div>
-              <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                <p className="text-2xl font-bold text-yellow-600">{scoreDistribution.average}</p>
-                <p className="text-sm text-yellow-700">Average (60-74)</p>
-              </div>
-              <div className="text-center p-4 bg-red-50 rounded-lg">
-                <p className="text-2xl font-bold text-red-600">{scoreDistribution.below}</p>
-                <p className="text-sm text-red-700">Below Average (&lt;60)</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Recommendations */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <TrendingUp className="h-5 w-5 text-indigo-600" />
-              <span>AI Recommendations</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent>
             <div className="space-y-3">
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-sm font-medium text-blue-800">Prioritize High-Score Applications</p>
-                <p className="text-xs text-blue-600 mt-1">Focus on applications with AI scores above 85 for faster processing</p>
+              <div className="flex justify-between items-center">
+                <div className="flex items-center space-x-2">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span className="text-sm">Low Risk</span>
+                </div>
+                <Badge className="bg-green-100 text-green-800">{riskDist.low}</Badge>
               </div>
-              
-              <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                <p className="text-sm font-medium text-green-800">Optimize Credit Limits</p>
-                <p className="text-xs text-green-600 mt-1">Consider increasing limits for low-risk, high-volume merchants</p>
+              <div className="flex justify-between items-center">
+                <div className="flex items-center space-x-2">
+                  <AlertTriangle className="w-4 h-4 text-yellow-500" />
+                  <span className="text-sm">Medium Risk</span>
+                </div>
+                <Badge className="bg-yellow-100 text-yellow-800">{riskDist.medium}</Badge>
               </div>
-              
-              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                <p className="text-sm font-medium text-amber-800">Review Medium-Risk Applications</p>
-                <p className="text-xs text-amber-600 mt-1">Manual review recommended for applications scoring 60-75</p>
+              <div className="flex justify-between items-center">
+                <div className="flex items-center space-x-2">
+                  <XCircle className="w-4 h-4 text-red-500" />
+                  <span className="text-sm">High Risk</span>
+                </div>
+                <Badge className="bg-red-100 text-red-800">{riskDist.high}</Badge>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* High Risk Applications Alert */}
+      {highRiskApps.length > 0 && (
+        <Card className="border-red-200 bg-red-50">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2 text-red-800">
+              <AlertTriangle className="w-5 h-5" />
+              <span>High Risk Applications Require Attention</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {highRiskApps.map(app => (
+                <div key={app.id} className="flex justify-between items-center p-3 bg-white rounded-lg">
+                  <div>
+                    <p className="font-medium text-gray-900">{app.entityName}</p>
+                    <p className="text-sm text-gray-600">AI Score: {app.aiScore || 'N/A'}/100</p>
+                  </div>
+                  <Badge className="bg-red-100 text-red-800">High Risk</Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* AI Insights */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <TrendingUp className="w-5 h-5 text-green-600" />
+            <span>AI Insights & Recommendations</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="p-4 bg-blue-50 rounded-lg">
+              <h4 className="font-medium text-blue-900 mb-2">Approval Rate Optimization</h4>
+              <p className="text-sm text-blue-800">
+                Applications with AI scores above 80 have a 95% approval rate. Consider fast-tracking high-scoring applications.
+              </p>
+            </div>
+            
+            <div className="p-4 bg-green-50 rounded-lg">
+              <h4 className="font-medium text-green-900 mb-2">Processing Efficiency</h4>
+              <p className="text-sm text-green-800">
+                Automated verification is reducing manual review time by 65%. Continue to refine AI models for better accuracy.
+              </p>
+            </div>
+            
+            <div className="p-4 bg-yellow-50 rounded-lg">
+              <h4 className="font-medium text-yellow-900 mb-2">Risk Management</h4>
+              <p className="text-sm text-yellow-800">
+                {riskDist.high > 0 ? `${riskDist.high} high-risk applications detected. ` : ''}
+                Consider implementing additional verification steps for applications with risk scores above 70.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
