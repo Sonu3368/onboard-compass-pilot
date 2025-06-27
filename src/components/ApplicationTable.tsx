@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarInitials } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { 
   Eye, 
   CheckCircle, 
@@ -129,7 +129,7 @@ export const ApplicationTable: React.FC<ApplicationTableProps> = ({
                 <div className="flex items-center space-x-4 mb-4">
                   <Avatar className="h-12 w-12">
                     <AvatarFallback className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white">
-                      <AvatarInitials>{application.entityName.substring(0, 2).toUpperCase()}</AvatarInitials>
+                      {application.entityName.substring(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   
