@@ -20,14 +20,25 @@ import {
   FileText,
   Shield,
   Users,
-  DollarSign
+  DollarSign,
+  MapPin,
+  Clock,
+  Briefcase
 } from 'lucide-react';
 
 interface Application {
   id: string;
   entityName: string;
+  entityType?: string;
   mid: string;
+  businessAddress?: string;
+  city: string;
+  businessWebsite: string;
+  natureOfBusiness?: string;
+  businessVintage?: string;
+  annualTurnover?: number;
   rzpRmName: string;
+  rzpRmPhone?: string;
   pocName: string;
   pocEmail: string;
   pocPhone: string;
@@ -36,11 +47,15 @@ interface Application {
   approvalDate?: Date;
   expectedCreditLimit: number;
   monthlySpends: number;
-  businessWebsite: string;
-  city: string;
+  internationalSpends?: number;
+  lowerMccSpends?: number;
+  appointmentDate?: string;
+  sourceOfAppointment?: string;
+  spocRemarks?: string;
   priority: 'high' | 'medium' | 'low';
   aiScore?: number;
   riskLevel?: 'low' | 'medium' | 'high';
+  consentFile?: string;
 }
 
 interface DetailViewProps {
@@ -165,43 +180,59 @@ export const DetailView: React.FC<DetailViewProps> = ({
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4">
                       <div>
                         <label className="text-sm font-medium text-gray-500">Entity Name</label>
                         <p className="text-sm text-gray-900 font-medium">{application.entityName}</p>
                       </div>
-                      <div>
-                        <label className="text-sm font-medium text-gray-500">MID</label>
-                        <p className="text-sm text-gray-900 font-medium">{application.mid}</p>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-sm font-medium text-gray-500">MID</label>
+                          <p className="text-sm text-gray-900 font-medium">{application.mid}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-gray-500">Entity Type</label>
+                          <p className="text-sm text-gray-900">{application.entityType || 'N/A'}</p>
+                        </div>
                       </div>
                       <div>
-                        <label className="text-sm font-medium text-gray-500">City</label>
-                        <p className="text-sm text-gray-900">{application.city}</p>
+                        <label className="text-sm font-medium text-gray-500">Business Address</label>
+                        <p className="text-sm text-gray-900">{application.businessAddress || 'N/A'}</p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-sm font-medium text-gray-500">City</label>
+                          <p className="text-sm text-gray-900">{application.city}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-gray-500">Business Vintage</label>
+                          <p className="text-sm text-gray-900">{application.businessVintage || 'N/A'}</p>
+                        </div>
                       </div>
                       <div>
-                        <label className="text-sm font-medium text-gray-500">Priority</label>
-                        <Badge variant="outline" className={
-                          application.priority === 'high' ? 'border-red-200 text-red-800' :
-                          application.priority === 'medium' ? 'border-yellow-200 text-yellow-800' :
-                          'border-green-200 text-green-800'
-                        }>
-                          {application.priority.charAt(0).toUpperCase() + application.priority.slice(1)}
-                        </Badge>
+                        <label className="text-sm font-medium text-gray-500">Nature of Business</label>
+                        <p className="text-sm text-gray-900">{application.natureOfBusiness || 'N/A'}</p>
                       </div>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-500">Business Website</label>
-                      <div className="flex items-center space-x-2">
-                        <Globe className="h-4 w-4 text-gray-400" />
-                        <a 
-                          href={application.businessWebsite} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-sm text-indigo-600 hover:text-indigo-800 hover:underline"
-                        >
-                          {application.businessWebsite}
-                        </a>
+                      <div>
+                        <label className="text-sm font-medium text-gray-500">Business Website</label>
+                        <div className="flex items-center space-x-2">
+                          <Globe className="h-4 w-4 text-gray-400" />
+                          <a 
+                            href={application.businessWebsite} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-sm text-indigo-600 hover:text-indigo-800 hover:underline"
+                          >
+                            {application.businessWebsite}
+                          </a>
+                        </div>
                       </div>
+                      {application.annualTurnover && (
+                        <div>
+                          <label className="text-sm font-medium text-gray-500">Annual Turnover</label>
+                          <p className="text-sm text-gray-900 font-medium">{formatCurrency(application.annualTurnover)}</p>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -232,40 +263,79 @@ export const DetailView: React.FC<DetailViewProps> = ({
                     <div>
                       <label className="text-sm font-medium text-gray-500">Relationship Manager</label>
                       <p className="text-sm text-gray-900 font-medium">{application.rzpRmName}</p>
+                      {application.rzpRmPhone && (
+                        <div className="flex items-center space-x-2 mt-1">
+                          <Phone className="h-4 w-4 text-gray-400" />
+                          <span className="text-sm text-gray-900">{application.rzpRmPhone}</span>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
               </div>
 
-              {/* Timeline */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Calendar className="h-5 w-5" />
-                    <span>Timeline</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center space-x-8">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+              {/* Additional Details */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Appointment & Source Details */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Calendar className="h-5 w-5" />
+                      <span>Appointment Details</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {application.appointmentDate && (
                       <div>
-                        <p className="text-sm font-medium">Application Submitted</p>
-                        <p className="text-xs text-gray-500">{application.submissionDate.toLocaleDateString()}</p>
-                      </div>
-                    </div>
-                    {application.approvalDate && (
-                      <div className="flex items-center space-x-2">
-                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                        <div>
-                          <p className="text-sm font-medium">Approved</p>
-                          <p className="text-xs text-gray-500">{application.approvalDate.toLocaleDateString()}</p>
-                        </div>
+                        <label className="text-sm font-medium text-gray-500">Appointment Date</label>
+                        <p className="text-sm text-gray-900">{new Date(application.appointmentDate).toLocaleDateString()}</p>
                       </div>
                     )}
-                  </div>
-                </CardContent>
-              </Card>
+                    {application.sourceOfAppointment && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-500">Source of Appointment</label>
+                        <p className="text-sm text-gray-900">{application.sourceOfAppointment}</p>
+                      </div>
+                    )}
+                    {application.spocRemarks && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-500">SPOC Remarks</label>
+                        <p className="text-sm text-gray-900">{application.spocRemarks}</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Timeline */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Clock className="h-5 w-5" />
+                      <span>Timeline</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center space-x-8">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                        <div>
+                          <p className="text-sm font-medium">Application Submitted</p>
+                          <p className="text-xs text-gray-500">{application.submissionDate.toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                      {application.approvalDate && (
+                        <div className="flex items-center space-x-2">
+                          <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                          <div>
+                            <p className="text-sm font-medium">Approved</p>
+                            <p className="text-xs text-gray-500">{application.approvalDate.toLocaleDateString()}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
 
             <TabsContent value="verification" className="space-y-6">
@@ -350,6 +420,18 @@ export const DetailView: React.FC<DetailViewProps> = ({
                       <label className="text-sm font-medium text-gray-500">Estimated Monthly Spends</label>
                       <p className="text-xl font-semibold text-blue-600">{formatCurrency(application.monthlySpends)}</p>
                     </div>
+                    {application.internationalSpends !== undefined && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-500">International Spends</label>
+                        <p className="text-sm text-gray-900">{application.internationalSpends}%</p>
+                      </div>
+                    )}
+                    {application.lowerMccSpends !== undefined && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-500">Lower MCC Spends</label>
+                        <p className="text-sm text-gray-900">{application.lowerMccSpends}%</p>
+                      </div>
+                    )}
                     <div className="bg-gray-50 p-4 rounded-lg">
                       <label className="text-sm font-medium text-gray-500">Utilization Ratio</label>
                       <div className="flex items-center space-x-2 mt-1">
@@ -409,24 +491,26 @@ export const DetailView: React.FC<DetailViewProps> = ({
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <FileText className="h-8 w-8 text-blue-500" />
-                        <div>
-                          <p className="text-sm font-medium">Consent Form</p>
-                          <p className="text-xs text-gray-500">Uploaded on {application.submissionDate.toLocaleDateString()}</p>
+                    {application.consentFile ? (
+                      <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <FileText className="h-8 w-8 text-blue-500" />
+                          <div>
+                            <p className="text-sm font-medium">Consent Form</p>
+                            <p className="text-xs text-gray-500">Uploaded on {application.submissionDate.toLocaleDateString()}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <CheckCircle className="h-5 w-5 text-green-500" />
+                          <Button variant="outline" size="sm">View</Button>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <CheckCircle className="h-5 w-5 text-green-500" />
-                        <Button variant="outline" size="sm">View</Button>
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        <FileText className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                        <p className="text-sm">No consent form uploaded</p>
                       </div>
-                    </div>
-                    
-                    <div className="text-center py-8 text-gray-500">
-                      <FileText className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-                      <p className="text-sm">Additional documents will appear here when uploaded</p>
-                    </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
