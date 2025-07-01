@@ -1,33 +1,29 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { VerificationStatus } from './VerificationStatus';
+import { MerchantInsightsReport } from './MerchantInsightsReport';
 import { 
   X, 
   CheckCircle, 
   XCircle, 
   Building, 
-  CreditCard, 
   Phone, 
   Mail, 
   Globe, 
   Calendar,
-  TrendingUp,
-  AlertTriangle,
-  FileText,
-  Shield,
+  Clock,
   Users,
   DollarSign,
-  MapPin,
-  Clock,
-  Briefcase
+  FileText,
+  AlertTriangle
 } from 'lucide-react';
 
 interface Application {
   id: string;
+  applicationId?: string;
   entityName: string;
   entityType?: string;
   mid: string;
@@ -39,9 +35,9 @@ interface Application {
   annualTurnover?: number;
   rzpRmName: string;
   rzpRmPhone?: string;
-  pocName: string;
-  pocEmail: string;
-  pocPhone: string;
+  merchantPocName?: string;
+  merchantPocEmail?: string;
+  merchantPocPhone?: string;
   status: 'pending' | 'approved' | 'rejected' | 'active';
   submissionDate: Date;
   approvalDate?: Date;
@@ -56,6 +52,16 @@ interface Application {
   aiScore?: number;
   riskLevel?: 'low' | 'medium' | 'high';
   consentFile?: string;
+  // New comprehensive fields
+  mtrAvailable?: string;
+  yesBankRelationship?: string;
+  yblCreditLimit?: number;
+  natureOfUnderwriting?: string;
+  securityType?: string;
+  policy?: string;
+  gmv?: number;
+  alternateNumber?: string;
+  verificationStatus?: 'pending' | 'completed' | 'failed';
 }
 
 interface DetailViewProps {
@@ -71,28 +77,56 @@ export const DetailView: React.FC<DetailViewProps> = ({
   onApprove,
   onReject
 }) => {
-  const [aiVerification, setAiVerification] = useState<any>(null);
-  const [isLoadingAI, setIsLoadingAI] = useState(true);
+  const [verificationResults, setVerificationResults] = useState<any>(null);
+  const [isLoadingVerification, setIsLoadingVerification] = useState(true);
 
   useEffect(() => {
-    // Simulate AI verification process
-    const runAIVerification = async () => {
-      setIsLoadingAI(true);
+    // Simulate comprehensive verification process
+    const runVerification = async () => {
+      setIsLoadingVerification(true);
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      setAiVerification({
-        gstin: { verified: true, message: "GSTIN Active, Legal Name Matched", score: 95 },
-        email: { verified: true, message: "Email domain verified and active", score: 88 },
-        creditHistory: { verified: true, message: "No defaults found in credit history", score: 92 },
-        businessValidity: { verified: true, message: "Business website active and legitimate", score: 85 },
-        financialStability: { verified: true, message: "Financial ratios within acceptable range", score: 78 },
-        overallScore: 87
-      });
-      
-      setIsLoadingAI(false);
+      // Generate mock verification results
+      const mockResults = {
+        gstin: {
+          verified: Math.random() > 0.2,
+          status: Math.random() > 0.2 ? 'verified' : 'failed',
+          message: Math.random() > 0.2 ? "GSTIN Active, Legal Name Matched" : "GSTIN verification failed or inactive",
+          details: Math.random() > 0.2 ? `Legal Name: ${application.entityName}, Last GST Filing: ${new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000).toLocaleDateString()}` : "Unable to verify GSTIN details",
+          lastUpdated: new Date().toLocaleString()
+        },
+        email: {
+          verified: Math.random() > 0.15,
+          status: Math.random() > 0.15 ? 'verified' : 'failed', 
+          message: Math.random() > 0.15 ? "Email domain verified and active" : "Email verification failed",
+          details: Math.random() > 0.15 ? "Domain reputation: Good, MX records found" : "Domain issues detected",
+          lastUpdated: new Date().toLocaleString()
+        },
+        amgmv: {
+          verified: Math.random() > 0.25,
+          status: Math.random() > 0.25 ? 'verified' : 'failed',
+          message: Math.random() > 0.25 ? "AMGMV data pulled and verified" : "AMGMV data mismatch or unavailable",
+          details: Math.random() > 0.25 ? `Pulled AMGMV: ${new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(Math.random() * 5000000 + 1000000)}, MTR Available: ${application.mtrAvailable}` : "MTR data inconsistency detected",
+          lastUpdated: new Date().toLocaleString()
+        },
+        credit: {
+          verified: Math.random() > 0.3,
+          status: Math.random() > 0.3 ? 'verified' : 'failed',
+          message: Math.random() > 0.3 ? "No defaults found in credit history" : "Credit issues detected",
+          details: Math.random() > 0.3 ? "Clean credit history, no outstanding dues" : "Past defaults or pending dues found",
+          lastUpdated: new Date().toLocaleString()
+        }
+      };
+
+      // Determine overall status
+      const allVerified = Object.values(mockResults).every(result => result.verified);
+      const overallStatus = allVerified ? 'approved' : 'flagged';
+
+      setVerificationResults({ ...mockResults, overallStatus });
+      setIsLoadingVerification(false);
     };
 
-    runAIVerification();
+    runVerification();
   }, [application.id]);
 
   const formatCurrency = (amount: number) => {
@@ -114,32 +148,9 @@ export const DetailView: React.FC<DetailViewProps> = ({
     return colors[status as keyof typeof colors] || colors.pending;
   };
 
-  const VerificationItem: React.FC<{ label: string; result: any; icon: React.ReactNode }> = ({ label, result, icon }) => (
-    <div className="flex items-start space-x-3 p-4 bg-gray-50 rounded-lg">
-      <div className="flex-shrink-0 mt-1">
-        {result.verified ? (
-          <CheckCircle className="h-5 w-5 text-green-500" />
-        ) : (
-          <XCircle className="h-5 w-5 text-red-500" />
-        )}
-      </div>
-      <div className="flex-1">
-        <div className="flex items-center space-x-2 mb-1">
-          {icon}
-          <h4 className="text-sm font-medium text-gray-900">{label}</h4>
-          <Badge variant="outline" className="text-xs">
-            Score: {result.score}/100
-          </Badge>
-        </div>
-        <p className="text-sm text-gray-600">{result.message}</p>
-        <Progress value={result.score} className="mt-2 h-2" />
-      </div>
-    </div>
-  );
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-6xl max-h-[95vh] overflow-y-auto">
+      <Card className="w-full max-w-7xl max-h-[95vh] overflow-y-auto">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-6 border-b">
           <div className="flex items-center space-x-4">
             <div className="w-12 h-12 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
@@ -152,6 +163,9 @@ export const DetailView: React.FC<DetailViewProps> = ({
                   {application.status.charAt(0).toUpperCase() + application.status.slice(1)}
                 </Badge>
                 <span className="text-sm text-gray-500">MID: {application.mid}</span>
+                {application.applicationId && (
+                  <span className="text-sm text-gray-500">Ref: {application.applicationId}</span>
+                )}
               </div>
             </div>
           </div>
@@ -162,10 +176,16 @@ export const DetailView: React.FC<DetailViewProps> = ({
         
         <CardContent className="p-6">
           <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="verification">AI Verification</TabsTrigger>
-              <TabsTrigger value="financial">Financial Details</TabsTrigger>
+              <TabsTrigger value="verification">
+                Verification
+                {verificationResults?.overallStatus === 'flagged' && (
+                  <AlertTriangle className="h-3 w-3 ml-1 text-red-500" />
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="financial">Financial</TabsTrigger>
+              <TabsTrigger value="mtr">MTR Report</TabsTrigger>
               <TabsTrigger value="documents">Documents</TabsTrigger>
             </TabsList>
 
@@ -227,10 +247,12 @@ export const DetailView: React.FC<DetailViewProps> = ({
                           </a>
                         </div>
                       </div>
-                      {application.annualTurnover && (
+                      {application.mtrAvailable && (
                         <div>
-                          <label className="text-sm font-medium text-gray-500">Annual Turnover</label>
-                          <p className="text-sm text-gray-900 font-medium">{formatCurrency(application.annualTurnover)}</p>
+                          <label className="text-sm font-medium text-gray-500">MTR Available</label>
+                          <Badge className={application.mtrAvailable === 'Yes' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                            {application.mtrAvailable}
+                          </Badge>
                         </div>
                       )}
                     </div>
@@ -247,21 +269,7 @@ export const DetailView: React.FC<DetailViewProps> = ({
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <label className="text-sm font-medium text-gray-500">Point of Contact</label>
-                      <p className="text-sm text-gray-900 font-medium">{application.pocName}</p>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <Mail className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm text-gray-900">{application.pocEmail}</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Phone className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm text-gray-900">{application.pocPhone}</span>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-500">Relationship Manager</label>
+                      <label className="text-sm font-medium text-gray-500">RZP RM (Sales POC)</label>
                       <p className="text-sm text-gray-900 font-medium">{application.rzpRmName}</p>
                       {application.rzpRmPhone && (
                         <div className="flex items-center space-x-2 mt-1">
@@ -270,51 +278,88 @@ export const DetailView: React.FC<DetailViewProps> = ({
                         </div>
                       )}
                     </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Merchant Point of Contact</label>
+                      <p className="text-sm text-gray-900 font-medium">{application.merchantPocName || 'N/A'}</p>
+                      <div className="space-y-1 mt-1">
+                        {application.merchantPocEmail && (
+                          <div className="flex items-center space-x-2">
+                            <Mail className="h-4 w-4 text-gray-400" />
+                            <span className="text-sm text-gray-900">{application.merchantPocEmail}</span>
+                          </div>
+                        )}
+                        {application.merchantPocPhone && (
+                          <div className="flex items-center space-x-2">
+                            <Phone className="h-4 w-4 text-gray-400" />
+                            <span className="text-sm text-gray-900">{application.merchantPocPhone}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    {application.alternateNumber && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-500">Alternate Number</label>
+                        <div className="flex items-center space-x-2">
+                          <Phone className="h-4 w-4 text-gray-400" />
+                          <span className="text-sm text-gray-900">{application.alternateNumber}</span>
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </div>
 
-              {/* Additional Details */}
+              {/* Banking & Additional Information */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Appointment & Source Details */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <Calendar className="h-5 w-5" />
-                      <span>Appointment Details</span>
-                    </CardTitle>
+                    <CardTitle>Banking Relationship & Policy</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {application.appointmentDate && (
+                    {application.yesBankRelationship && (
                       <div>
-                        <label className="text-sm font-medium text-gray-500">Appointment Date</label>
-                        <p className="text-sm text-gray-900">{new Date(application.appointmentDate).toLocaleDateString()}</p>
+                        <label className="text-sm font-medium text-gray-500">YES Bank Relationship</label>
+                        <Badge className={application.yesBankRelationship === 'Yes' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+                          {application.yesBankRelationship}
+                        </Badge>
                       </div>
                     )}
-                    {application.sourceOfAppointment && (
+                    {application.yblCreditLimit && (
                       <div>
-                        <label className="text-sm font-medium text-gray-500">Source of Appointment</label>
-                        <p className="text-sm text-gray-900">{application.sourceOfAppointment}</p>
+                        <label className="text-sm font-medium text-gray-500">YBL Credit Limit Sanctioned</label>
+                        <p className="text-sm text-gray-900 font-medium">{formatCurrency(application.yblCreditLimit)}</p>
                       </div>
                     )}
-                    {application.spocRemarks && (
+                    {application.natureOfUnderwriting && (
                       <div>
-                        <label className="text-sm font-medium text-gray-500">SPOC Remarks</label>
-                        <p className="text-sm text-gray-900">{application.spocRemarks}</p>
+                        <label className="text-sm font-medium text-gray-500">Nature of Underwriting</label>
+                        <p className="text-sm text-gray-900">{application.natureOfUnderwriting}</p>
+                      </div>
+                    )}
+                    {application.securityType && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-500">Security Type</label>
+                        <Badge variant="outline">{application.securityType}</Badge>
+                      </div>
+                    )}
+                    {application.policy && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-500">Policy</label>
+                        <p className="text-sm text-gray-900">{application.policy}</p>
                       </div>
                     )}
                   </CardContent>
                 </Card>
 
-                {/* Timeline */}
+                {/* Timeline & Appointment */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center space-x-2">
-                      <Clock className="h-5 w-5" />
-                      <span>Timeline</span>
+                      <Calendar className="h-5 w-5" />
+                      <span>Timeline & Appointment</span>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="space-y-4">
                     <div className="flex items-center space-x-8">
                       <div className="flex items-center space-x-2">
                         <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
@@ -333,73 +378,46 @@ export const DetailView: React.FC<DetailViewProps> = ({
                         </div>
                       )}
                     </div>
+                    {application.appointmentDate && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-500">Appointment Date</label>
+                        <p className="text-sm text-gray-900">{new Date(application.appointmentDate).toLocaleDateString()}</p>
+                      </div>
+                    )}
+                    {application.sourceOfAppointment && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-500">Source of Appointment</label>
+                        <p className="text-sm text-gray-900">{application.sourceOfAppointment}</p>
+                      </div>
+                    )}
+                    {application.spocRemarks && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-500">SPOC Remarks</label>
+                        <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">{application.spocRemarks}</p>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </div>
             </TabsContent>
 
             <TabsContent value="verification" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Shield className="h-5 w-5" />
-                    <span>AI-Powered Verification</span>
-                    {application.aiScore && (
-                      <Badge className="bg-gradient-to-r from-green-500 to-blue-500 text-white">
-                        Overall Score: {application.aiScore}/100
-                      </Badge>
-                    )}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {isLoadingAI ? (
-                    <div className="flex items-center justify-center py-12">
-                      <div className="text-center">
-                        <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
-                        <p className="text-sm text-gray-600">Running automated verification checks...</p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      <div className="mb-6">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium">Overall Verification Score</span>
-                          <span className="text-sm font-bold text-green-600">{aiVerification.overallScore}/100</span>
-                        </div>
-                        <Progress value={aiVerification.overallScore} className="h-3" />
-                      </div>
-
-                      <div className="grid grid-cols-1 gap-4">
-                        <VerificationItem
-                          label="GSTIN Verification"
-                          result={aiVerification.gstin}
-                          icon={<FileText className="h-4 w-4 text-blue-500" />}
-                        />
-                        <VerificationItem
-                          label="Email Verification"
-                          result={aiVerification.email}
-                          icon={<Mail className="h-4 w-4 text-green-500" />}
-                        />
-                        <VerificationItem
-                          label="Credit History Check"
-                          result={aiVerification.creditHistory}
-                          icon={<CreditCard className="h-4 w-4 text-purple-500" />}
-                        />
-                        <VerificationItem
-                          label="Business Validity"
-                          result={aiVerification.businessValidity}
-                          icon={<Building className="h-4 w-4 text-indigo-500" />}
-                        />
-                        <VerificationItem
-                          label="Financial Stability"
-                          result={aiVerification.financialStability}
-                          icon={<TrendingUp className="h-4 w-4 text-orange-500" />}
-                        />
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+              {isLoadingVerification ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-center">
+                    <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-sm text-gray-600">Running comprehensive automated verification...</p>
+                  </div>
+                </div>
+              ) : verificationResults ? (
+                <VerificationStatus
+                  gstinVerification={verificationResults.gstin}
+                  emailVerification={verificationResults.email}
+                  amgmvVerification={verificationResults.amgmv}
+                  creditVerification={verificationResults.credit}
+                  overallStatus={verificationResults.overallStatus}
+                />
+              ) : null}
             </TabsContent>
 
             <TabsContent value="financial" className="space-y-6">
@@ -408,7 +426,7 @@ export const DetailView: React.FC<DetailViewProps> = ({
                   <CardHeader>
                     <CardTitle className="flex items-center space-x-2">
                       <DollarSign className="h-5 w-5" />
-                      <span>Credit & Spending</span>
+                      <span>Credit & Spending Details</span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -420,26 +438,31 @@ export const DetailView: React.FC<DetailViewProps> = ({
                       <label className="text-sm font-medium text-gray-500">Estimated Monthly Spends</label>
                       <p className="text-xl font-semibold text-blue-600">{formatCurrency(application.monthlySpends)}</p>
                     </div>
-                    {application.internationalSpends !== undefined && (
+                    {application.gmv && (
                       <div>
-                        <label className="text-sm font-medium text-gray-500">International Spends</label>
-                        <p className="text-sm text-gray-900">{application.internationalSpends}%</p>
+                        <label className="text-sm font-medium text-gray-500">Gross Monthly Value (GMV)</label>
+                        <p className="text-lg font-semibold text-purple-600">{formatCurrency(application.gmv)}</p>
                       </div>
                     )}
-                    {application.lowerMccSpends !== undefined && (
+                    {application.annualTurnover && (
                       <div>
-                        <label className="text-sm font-medium text-gray-500">Lower MCC Spends</label>
-                        <p className="text-sm text-gray-900">{application.lowerMccSpends}%</p>
+                        <label className="text-sm font-medium text-gray-500">Annual Turnover</label>
+                        <p className="text-lg font-semibold text-gray-900">{formatCurrency(application.annualTurnover)}</p>
                       </div>
                     )}
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <label className="text-sm font-medium text-gray-500">Utilization Ratio</label>
-                      <div className="flex items-center space-x-2 mt-1">
-                        <Progress value={(application.monthlySpends / application.expectedCreditLimit) * 100} className="flex-1" />
-                        <span className="text-sm font-medium">
-                          {((application.monthlySpends / application.expectedCreditLimit) * 100).toFixed(1)}%
-                        </span>
-                      </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      {application.internationalSpends !== undefined && (
+                        <div>
+                          <label className="text-sm font-medium text-gray-500">International Spends</label>
+                          <p className="text-sm text-gray-900 font-medium">{application.internationalSpends}%</p>
+                        </div>
+                      )}
+                      {application.lowerMccSpends !== undefined && (
+                        <div>
+                          <label className="text-sm font-medium text-gray-500">Lower MCC Spends</label>
+                          <p className="text-sm text-gray-900 font-medium">{application.lowerMccSpends}%</p>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -481,6 +504,10 @@ export const DetailView: React.FC<DetailViewProps> = ({
               </div>
             </TabsContent>
 
+            <TabsContent value="mtr" className="space-y-6">
+              <MerchantInsightsReport mid={application.mid} entityName={application.entityName} />
+            </TabsContent>
+
             <TabsContent value="documents" className="space-y-6">
               <Card>
                 <CardHeader>
@@ -520,6 +547,13 @@ export const DetailView: React.FC<DetailViewProps> = ({
           {/* Action Buttons */}
           {application.status === 'pending' && (onApprove || onReject) && (
             <div className="flex justify-end space-x-4 pt-6 border-t mt-6">
+              <Button 
+                variant="outline"
+                className="text-yellow-600 border-yellow-200 hover:bg-yellow-50"
+              >
+                <Clock className="h-4 w-4 mr-2" />
+                Awaiting Information
+              </Button>
               {onReject && (
                 <Button 
                   variant="outline" 
@@ -534,9 +568,10 @@ export const DetailView: React.FC<DetailViewProps> = ({
                 <Button 
                   onClick={onApprove}
                   className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                  disabled={verificationResults?.overallStatus === 'flagged'}
                 >
                   <CheckCircle className="h-4 w-4 mr-2" />
-                  Approve Application
+                  {verificationResults?.overallStatus === 'approved' ? 'Single-Click Approve' : 'Approve Application'}
                 </Button>
               )}
             </div>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -31,23 +30,49 @@ import { useToast } from '@/hooks/use-toast';
 
 interface Application {
   id: string;
+  applicationId?: string;
   entityName: string;
+  entityType?: string;
   mid: string;
+  businessAddress?: string;
+  city: string;
+  businessWebsite: string;
+  natureOfBusiness?: string;
+  businessVintage?: string;
+  annualTurnover?: number;
   rzpRmName: string;
-  pocName: string;
-  pocEmail: string;
-  pocPhone: string;
+  rzpRmPhone?: string;
+  merchantPocName?: string;
+  merchantPocEmail?: string;
+  merchantPocPhone?: string;
   status: 'pending' | 'approved' | 'rejected' | 'active';
   submissionDate: Date;
   approvalDate?: Date;
   expectedCreditLimit: number;
   monthlySpends: number;
-  businessWebsite: string;
-  city: string;
+  internationalSpends?: number;
+  lowerMccSpends?: number;
+  appointmentDate?: string;
+  sourceOfAppointment?: string;
+  spocRemarks?: string;
   priority: 'high' | 'medium' | 'low';
   aiScore?: number;
   riskLevel?: 'low' | 'medium' | 'high';
+  consentFile?: string;
+  // New comprehensive fields
+  mtrAvailable?: string;
+  yesBankRelationship?: string;
+  yblCreditLimit?: number;
+  natureOfUnderwriting?: string;
+  securityType?: string;
+  policy?: string;
+  gmv?: number;
+  alternateNumber?: string;
   verificationStatus?: 'pending' | 'completed' | 'failed';
+  // Legacy field mappings
+  pocName?: string;
+  pocEmail?: string;
+  pocPhone?: string;
 }
 
 export const OnboardingDashboard: React.FC = () => {
@@ -104,12 +129,18 @@ export const OnboardingDashboard: React.FC = () => {
   };
 
   const handleApplicationSubmit = async (newApplicationData: Partial<Application>) => {
+    console.log('Submitting comprehensive application data:', newApplicationData);
+    
     const application: Application = {
       id: Date.now().toString(),
       status: 'pending',
       submissionDate: new Date(),
       priority: 'medium',
       verificationStatus: 'pending',
+      // Map new fields to legacy fields for compatibility
+      pocName: newApplicationData.merchantPocName,
+      pocEmail: newApplicationData.merchantPocEmail,
+      pocPhone: newApplicationData.merchantPocPhone,
       ...newApplicationData as Application
     };
     
@@ -117,8 +148,8 @@ export const OnboardingDashboard: React.FC = () => {
     setIsFormOpen(false);
     
     toast({
-      title: 'Application Submitted Successfully',
-      description: `Application for ${application.entityName} has been submitted and will undergo automated verification.`,
+      title: 'Application Submitted Successfully!',
+      description: `Application for ${application.entityName} (${application.applicationId}) has been submitted and will undergo automated verification.`,
     });
 
     // Start automated verification
@@ -213,7 +244,7 @@ export const OnboardingDashboard: React.FC = () => {
                 </div>
                 <div>
                   <h1 className="text-xl font-bold text-gray-900">Corporate Onboarding Dashboard</h1>
-                  <p className="text-xs text-gray-500">Advanced Workflow Management</p>
+                  <p className="text-xs text-gray-500">Comprehensive Client Management System</p>
                 </div>
               </div>
             </div>
