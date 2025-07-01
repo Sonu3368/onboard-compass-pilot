@@ -27,7 +27,6 @@ import { ApplicationTable } from './ApplicationTable';
 import { DetailView } from './DetailView';
 import { DashboardStats } from './DashboardStats';
 import { useToast } from '@/hooks/use-toast';
-import { BusinessAnalysisEngine } from './BusinessAnalysisEngine';
 
 interface Application {
   id: string;
@@ -301,17 +300,27 @@ export const OnboardingDashboard: React.FC = () => {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Tabs defaultValue="applications" className="w-full">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="applications">Applications</TabsTrigger>
-            <TabsTrigger value="verification">Verification</TabsTrigger>
-            <TabsTrigger value="insights">AI Insights</TabsTrigger>
-            <TabsTrigger value="notifications">Notifications</TabsTrigger>
-            <TabsTrigger value="mtr-report">MTR Report</TabsTrigger>
-            <TabsTrigger value="business-analysis">Business Analysis</TabsTrigger>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4 lg:w-fit">
+            <TabsTrigger value="dashboard" className="flex items-center space-x-2">
+              <BarChart3 className="w-4 h-4" />
+              <span>Dashboard</span>
+            </TabsTrigger>
+            <TabsTrigger value="internal-review" className="flex items-center space-x-2">
+              <Clock className="w-4 h-4" />
+              <span>Internal Review ({getPendingReviewApplications().length})</span>
+            </TabsTrigger>
+            <TabsTrigger value="active-applications" className="flex items-center space-x-2">
+              <CheckCircle className="w-4 h-4" />
+              <span>Active Applications ({getActiveApplications().length})</span>
+            </TabsTrigger>
+            <TabsTrigger value="onboarding-tracker" className="flex items-center space-x-2">
+              <TrendingUp className="w-4 h-4" />
+              <span>Onboarding Tracker ({getOnboardingTrackerApplications().length})</span>
+            </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="applications" className="space-y-6">
+          <TabsContent value="dashboard" className="space-y-6">
             <DashboardStats stats={dashboardStats} />
             
             {/* Quick Actions */}
@@ -374,10 +383,10 @@ export const OnboardingDashboard: React.FC = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="verification" className="space-y-6">
+          <TabsContent value="internal-review" className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">Verification</h2>
+                <h2 className="text-2xl font-bold text-gray-900">Internal Review & Decisioning</h2>
                 <p className="text-gray-600">Applications that have completed automated verification</p>
               </div>
               <Badge variant="secondary" className="text-sm">
@@ -408,44 +417,44 @@ export const OnboardingDashboard: React.FC = () => {
             />
           </TabsContent>
 
-          <TabsContent value="insights" className="space-y-6">
+          <TabsContent value="active-applications" className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">AI Insights</h2>
-                <p className="text-gray-600">Detailed analysis and recommendations</p>
+                <h2 className="text-2xl font-bold text-gray-900">Active Applications</h2>
+                <p className="text-gray-600">Recently approved applications (shown for 24 hours)</p>
               </div>
+              <Badge variant="secondary" className="text-sm">
+                {getActiveApplications().length} Active
+              </Badge>
             </div>
-            <div className="flex items-center justify-center">
-              <Progress value={75} className="w-32" />
-            </div>
+            <ApplicationTable 
+              applications={getActiveApplications()}
+              onView={(app) => {
+                setSelectedApplication(app);
+                setIsDetailViewOpen(true);
+              }}
+              showActions={false}
+            />
           </TabsContent>
 
-          <TabsContent value="notifications" className="space-y-6">
+          <TabsContent value="onboarding-tracker" className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">Notifications</h2>
-                <p className="text-gray-600">Recent notifications and alerts</p>
+                <h2 className="text-2xl font-bold text-gray-900">Onboarding Tracker</h2>
+                <p className="text-gray-600">All approved applications - permanent record</p>
               </div>
+              <Badge variant="secondary" className="text-sm">
+                {getOnboardingTrackerApplications().length} Total Onboarded
+              </Badge>
             </div>
-            <div className="flex items-center justify-center">
-              <Progress value={50} className="w-32" />
-            </div>
-          </TabsContent>
-
-          <TabsContent value="mtr-report" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900">MTR Report</h2>
-                <p className="text-gray-600">Monthly Transaction Report</p>
-              </div>
-            </div>
-            <div className="flex items-center justify-center">
-              <Progress value={80} className="w-32" />
-            </div>
-          </TabsContent>
-
-          <TabsContent value="business-analysis">
-            <BusinessAnalysisEngine />
+            <ApplicationTable 
+              applications={getOnboardingTrackerApplications()}
+              onView={(app) => {
+                setSelectedApplication(app);
+                setIsDetailViewOpen(true);
+              }}
+              showActions={false}
+            />
           </TabsContent>
         </Tabs>
       </div>
