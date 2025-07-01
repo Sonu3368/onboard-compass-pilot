@@ -20,22 +20,48 @@ import {
 
 interface Application {
   id: string;
+  applicationId?: string;
   entityName: string;
+  entityType?: string;
   mid: string;
+  businessAddress?: string;
+  city: string;
+  businessWebsite: string;
+  natureOfBusiness?: string;
+  businessVintage?: string;
+  annualTurnover?: number;
   rzpRmName: string;
-  pocName: string;
-  pocEmail: string;
-  pocPhone: string;
+  rzpRmPhone?: string;
+  merchantPocName?: string;
+  merchantPocEmail?: string;
+  merchantPocPhone?: string;
   status: 'pending' | 'approved' | 'rejected' | 'active';
   submissionDate: Date;
   approvalDate?: Date;
   expectedCreditLimit: number;
   monthlySpends: number;
-  businessWebsite: string;
-  city: string;
+  internationalSpends?: number;
+  lowerMccSpends?: number;
+  appointmentDate?: string;
+  sourceOfAppointment?: string;
+  spocRemarks?: string;
   priority: 'high' | 'medium' | 'low';
   aiScore?: number;
   riskLevel?: 'low' | 'medium' | 'high';
+  consentFile?: string;
+  mtrAvailable?: string;
+  yesBankRelationship?: string;
+  yblCreditLimit?: number;
+  natureOfUnderwriting?: string;
+  securityType?: string;
+  policy?: string;
+  gmv?: number;
+  alternateNumber?: string;
+  verificationStatus?: 'pending' | 'completed' | 'failed';
+  // Legacy field mappings for backward compatibility
+  pocName?: string;
+  pocEmail?: string;
+  pocPhone?: string;
 }
 
 interface ApplicationTableProps {
@@ -107,6 +133,21 @@ export const ApplicationTable: React.FC<ApplicationTableProps> = ({
     }).format(amount);
   };
 
+  // Helper function to get POC name with fallback
+  const getPocName = (app: Application) => {
+    return app.merchantPocName || app.pocName || 'N/A';
+  };
+
+  // Helper function to get POC email with fallback  
+  const getPocEmail = (app: Application) => {
+    return app.merchantPocEmail || app.pocEmail || 'N/A';
+  };
+
+  // Helper function to get POC phone with fallback
+  const getPocPhone = (app: Application) => {
+    return app.merchantPocPhone || app.pocPhone || 'N/A';
+  };
+
   if (applications.length === 0) {
     return (
       <Card>
@@ -163,15 +204,15 @@ export const ApplicationTable: React.FC<ApplicationTableProps> = ({
                     <h4 className="text-sm font-medium text-gray-700">Point of Contact</h4>
                     <div className="space-y-2">
                       <div className="flex items-center space-x-2 text-sm">
-                        <span className="font-medium">{application.pocName}</span>
+                        <span className="font-medium">{getPocName(application)}</span>
                       </div>
                       <div className="flex items-center space-x-2 text-sm text-gray-600">
                         <Mail className="h-3 w-3" />
-                        <span>{application.pocEmail}</span>
+                        <span>{getPocEmail(application)}</span>
                       </div>
                       <div className="flex items-center space-x-2 text-sm text-gray-600">
                         <Phone className="h-3 w-3" />
-                        <span>{application.pocPhone}</span>
+                        <span>{getPocPhone(application)}</span>
                       </div>
                     </div>
                   </div>
