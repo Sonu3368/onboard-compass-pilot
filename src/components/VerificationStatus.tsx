@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +17,11 @@ interface VerificationStatusProps {
   amgmvVerification: VerificationResult;
   creditVerification: VerificationResult;
   overallStatus: 'approved' | 'pending' | 'flagged';
+  emailVerificationDetails?: {
+    extractedEmails: string[];
+    targetEmail: string;
+    reasoning: string;
+  };
 }
 
 export const VerificationStatus: React.FC<VerificationStatusProps> = ({
@@ -25,7 +29,8 @@ export const VerificationStatus: React.FC<VerificationStatusProps> = ({
   emailVerification,
   amgmvVerification,
   creditVerification,
-  overallStatus
+  overallStatus,
+  emailVerificationDetails
 }) => {
   const getStatusIcon = (status: string, verified: boolean) => {
     if (status === 'pending') return <Clock className="h-5 w-5 text-yellow-500" />;
@@ -43,7 +48,8 @@ export const VerificationStatus: React.FC<VerificationStatusProps> = ({
     title: string;
     icon: React.ReactNode;
     result: VerificationResult;
-  }> = ({ title, icon, result }) => (
+    details?: React.ReactNode;
+  }> = ({ title, icon, result, details }) => (
     <div className="flex items-start space-x-4 p-4 border border-gray-200 rounded-lg bg-gray-50">
       <div className="flex-shrink-0 mt-1">
         {getStatusIcon(result.status, result.verified)}
@@ -63,6 +69,11 @@ export const VerificationStatus: React.FC<VerificationStatusProps> = ({
         {result.lastUpdated && (
           <p className="text-xs text-gray-400 mt-1">Last updated: {result.lastUpdated}</p>
         )}
+        {details && (
+          <div className="mt-3 p-2 bg-white rounded border">
+            {details}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -73,6 +84,42 @@ export const VerificationStatus: React.FC<VerificationStatusProps> = ({
       case 'flagged': return 'bg-red-100 text-red-800 border-red-200';
       default: return 'bg-yellow-100 text-yellow-800 border-yellow-200';
     }
+  };
+
+  // Email verification details component
+  const EmailVerificationDetails = () => {
+    if (!emailVerificationDetails) return null;
+
+    return (
+      <div className="space-y-2">
+        <div className="text-xs text-gray-600">
+          <strong>Target Email:</strong> {emailVerificationDetails.targetEmail}
+        </div>
+        {emailVerificationDetails.extractedEmails.length > 0 && (
+          <div className="text-xs text-gray-600">
+            <strong>Extracted Emails:</strong>
+            <div className="flex flex-wrap gap-1 mt-1">
+              {emailVerificationDetails.extractedEmails.map((email, index) => (
+                <Badge
+                  key={index}
+                  variant="outline"
+                  className={`text-xs ${
+                    email.toLowerCase() === emailVerificationDetails.targetEmail.toLowerCase()
+                      ? 'bg-green-100 text-green-800 border-green-300'
+                      : 'bg-gray-100 text-gray-700'
+                  }`}
+                >
+                  {email}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+        <div className="text-xs text-gray-500">
+          <strong>Analysis:</strong> {emailVerificationDetails.reasoning}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -99,9 +146,10 @@ export const VerificationStatus: React.FC<VerificationStatusProps> = ({
         />
         
         <VerificationItem
-          title="Email Verification"
+          title="Email Verification (AI-Powered)"
           icon={<Mail className="h-4 w-4 text-green-500" />}
           result={emailVerification}
+          details={<EmailVerificationDetails />}
         />
         
         <VerificationItem

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { X, Upload, FileText, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { EmailVerificationDisplay } from './EmailVerificationDisplay';
 
 interface ApplicationFormProps {
   onSubmit: (data: any) => void;
@@ -52,6 +52,8 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({ onSubmit, onCl
   const [consentFile, setConsentFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [emailVerificationResult, setEmailVerificationResult] = useState<any>(null);
+  const [isVerifyingEmail, setIsVerifyingEmail] = useState(false);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -61,7 +63,7 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({ onSubmit, onCl
     }
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       // Validate file type
@@ -78,6 +80,54 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({ onSubmit, onCl
       if (errors.consentFile) {
         setErrors(prev => ({ ...prev, consentFile: '' }));
       }
+
+      // Trigger email verification if merchant POC email is available
+      if (formData.merchantPocEmail) {
+        await performEmailVerification(file, formData.merchantPocEmail);
+      }
+    }
+  };
+
+  const performEmailVerification = async (file: File, merchantEmail: string) => {
+    if (!merchantEmail) {
+      toast({
+        title: 'Email Required',
+        description: 'Please enter the Merchant POC Email before uploading the consent file.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setIsVerifyingEmail(true);
+    
+    try {
+      // Import the service dynamically to avoid circular dependencies
+      const { EmailVerificationService } = await import('../services/emailVerificationService');
+      const result = await EmailVerificationService.processConsentFile(file, merchantEmail);
+      
+      setEmailVerificationResult(result);
+      
+      if (result.target_email_match) {
+        toast({
+          title: 'Email Verification Successful',
+          description: 'The merchant POC email was found in the consent document.',
+        });
+      } else {
+        toast({
+          title: 'Email Verification Failed',
+          description: 'The merchant POC email was not found in the consent document.',
+          variant: 'destructive'
+        });
+      }
+    } catch (error) {
+      console.error('Email verification error:', error);
+      toast({
+        title: 'Verification Error',
+        description: 'Unable to verify email against consent document.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsVerifyingEmail(false);
     }
   };
 
@@ -158,7 +208,7 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({ onSubmit, onCl
     setIsSubmitting(true);
 
     try {
-      // Convert string numbers to actual numbers and add file
+      // Convert string numbers to actual numbers and add file and verification results
       const processedData = {
         ...formData,
         annualTurnover: Number(formData.annualTurnover),
@@ -169,7 +219,8 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({ onSubmit, onCl
         gmv: Number(formData.gmv),
         yblCreditLimit: formData.yblCreditLimit ? Number(formData.yblCreditLimit) : null,
         consentFile,
-        applicationId: `APP-${Date.now()}`, // Generate unique application ID
+        emailVerificationResult,
+        applicationId: `APP-${Date.now()}`,
         submissionDate: new Date()
       };
 
@@ -363,6 +414,17 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({ onSubmit, onCl
                   )}
                 </div>
               </div>
+
+              {/* Email Verification Display */}
+              {(emailVerificationResult || isVerifyingEmail) && (
+                <div className="mt-4">
+                  <EmailVerificationDisplay
+                    verificationResult={emailVerificationResult}
+                    targetEmail={formData.merchantPocEmail}
+                    isProcessing={isVerifyingEmail}
+                  />
+                </div>
+              )}
             </div>
 
             {/* Submit Button */}
