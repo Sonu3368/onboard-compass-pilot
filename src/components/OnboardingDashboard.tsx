@@ -20,13 +20,15 @@ import {
   FileText,
   BarChart3,
   Calendar,
-  Settings
+  Settings,
+  Mail
 } from 'lucide-react';
 import { ApplicationForm } from './ApplicationForm';
 import { ApplicationTable } from './ApplicationTable';
 import { DetailView } from './DetailView';
 import { DashboardStats } from './DashboardStats';
 import { useToast } from '@/hooks/use-toast';
+import { EmailReportModal } from './EmailReportModal';
 
 interface Application {
   id: string;
@@ -82,6 +84,7 @@ export const OnboardingDashboard: React.FC = () => {
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDetailViewOpen, setIsDetailViewOpen] = useState(false);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [notifications, setNotifications] = useState(0);
   const [isVerifying, setIsVerifying] = useState(false);
   const { toast } = useToast();
@@ -277,6 +280,15 @@ export const OnboardingDashboard: React.FC = () => {
               >
                 <Plus className="w-4 h-4 mr-2" />
                 New Application
+              </Button>
+              
+              <Button 
+                onClick={() => setIsEmailModalOpen(true)}
+                variant="outline"
+                className="border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+              >
+                <Mail className="w-4 h-4 mr-2" />
+                Send Report / Email
               </Button>
               
               <Button variant="outline" size="sm" className="relative">
@@ -479,6 +491,14 @@ export const OnboardingDashboard: React.FC = () => {
             handleRejection(selectedApplication.id);
             setIsDetailViewOpen(false);
           }}
+        />
+      )}
+
+      {isEmailModalOpen && (
+        <EmailReportModal
+          isOpen={isEmailModalOpen}
+          onClose={() => setIsEmailModalOpen(false)}
+          applicationsData={activeTab === 'active-applications' ? getActiveApplications() : applications}
         />
       )}
     </div>
