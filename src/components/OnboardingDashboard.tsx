@@ -29,6 +29,7 @@ import { DetailView } from './DetailView';
 import { DashboardStats } from './DashboardStats';
 import { useToast } from '@/hooks/use-toast';
 import { EmailReportModal } from './EmailReportModal';
+import { DataFileUpload } from './DataFileUpload';
 
 interface Application {
   id: string;
@@ -313,7 +314,7 @@ export const OnboardingDashboard: React.FC = () => {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 lg:w-fit">
+          <TabsList className="grid w-full grid-cols-5 lg:w-fit">
             <TabsTrigger value="dashboard" className="flex items-center space-x-2">
               <BarChart3 className="w-4 h-4" />
               <span>Dashboard</span>
@@ -329,6 +330,10 @@ export const OnboardingDashboard: React.FC = () => {
             <TabsTrigger value="onboarding-tracker" className="flex items-center space-x-2">
               <TrendingUp className="w-4 h-4" />
               <span>Onboarding Tracker ({getOnboardingTrackerApplications().length})</span>
+            </TabsTrigger>
+            <TabsTrigger value="data-upload" className="flex items-center space-x-2">
+              <FileText className="w-4 h-4" />
+              <span>Data Upload</span>
             </TabsTrigger>
           </TabsList>
 
@@ -466,6 +471,18 @@ export const OnboardingDashboard: React.FC = () => {
                 setIsDetailViewOpen(true);
               }}
               showActions={false}
+            />
+          </TabsContent>
+
+          <TabsContent value="data-upload" className="space-y-6">
+            <DataFileUpload 
+              onFileUpload={(fileType, file) => {
+                console.log(`Uploaded ${fileType}:`, file);
+                toast({
+                  title: 'File Processed',
+                  description: `${fileType} file "${file.name}" has been processed successfully.`,
+                });
+              }}
             />
           </TabsContent>
         </Tabs>
